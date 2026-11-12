@@ -1,2 +1,0 @@
-# XenoCrypt
-Powerful Cypher!
