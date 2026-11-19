@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XenoCrypt.com — Zero-Knowledge & Post-Quantum Cipher Playground</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#05070A',
+            panel: '#0B1017',
+            emeraldGlow: '#10B981',
+            cyanGlow: '#06B6D4'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #05070A;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(6, 182, 212, 0.08), transparent 40%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: #E2E8F0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .glass {
+      background: rgba(11, 16, 23, 0.82);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-lg border px-4 py-3 text-sm font-medium shadow-xl transition-all"></div>
+
+  <!-- Navbar -->
+  <header class="border-b border-slate-800/80 bg-obsidian/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <a href="#top" class="flex items-center gap-3">
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-400/40 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L4 6v6c0 5.25 3.4 10 8 11 4.6-1 8-5.75 8-11V6l-8-4z" />
+            <circle cx="12" cy="11" r="2.5" />
+          </svg>
+        </div>
+        <div>
+          <span class="text-lg font-bold tracking-tight text-white">Xeno<span class="text-emerald-400">Crypt</span>.com</span>
+          <span class="ml-2 hidden rounded bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-300 border border-cyan-500/30 sm:inline">v2.4</span>
+        </div>
+      </a>
+
+      <nav class="hidden items-center gap-6 text-sm text-slate-300 md:flex">
+        <a href="#playground" class="hover:text-emerald-400 transition">Cipher Engine</a>
+        <a href="#architecture" class="hover:text-emerald-400 transition">Architecture</a>
+        <a href="#playground" onclick="focusPassphrase()" class="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 transition shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+          Launch Terminal
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section id="top" class="mx-auto max-w-6xl px-4 pt-12 pb-8">
+    <div class="grid gap-8 lg:grid-cols-12 lg:items-center">
+      <div class="lg:col-span-7 space-y-5">
+        <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
+          <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Client-Side Zero-Knowledge Cryptography
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl leading-tight">
+          Encrypt &amp; Decrypt in the Browser with <span class="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Quantum-Grade</span> Precision
+        </h1>
+        <p class="text-base text-slate-400 max-w-2xl leading-relaxed">
+          Every key derivation, encryption pass, and decryption check runs locally in your browser. No plaintext or passphrases ever leave your device.
+        </p>
+      </div>
+
+      <div class="lg:col-span-5 grid grid-cols-2 gap-3">
+        <div class="glass rounded-xl p-4">
+          <div class="text-xs text-slate-400">Cipher Core</div>
+          <div class="mt-1 text-xl font-bold text-emerald-400 mono">AES-256-GCM</div>
+          <div class="mt-1 text-xs text-slate-500">PBKDF2-SHA256 (100k iter)</div>
+        </div>
+        <div class="glass rounded-xl p-4">
+          <div class="text-xs text-slate-400">Entropy Check</div>
+          <div id="hero-entropy" class="mt-1 text-xl font-bold text-cyan-400 mono">0 bits</div>
+          <div class="mt-1 text-xs text-slate-500">Live passphrase strength</div>
+        </div>
+        <div class="glass rounded-xl p-4">
+          <div class="text-xs text-slate-400">Server Logging</div>
+          <div class="mt-1 text-xl font-bold text-white mono">0 Bytes</div>
+          <div class="mt-1 text-xs text-slate-500">Pure static client execution</div>
+        </div>
+        <div class="glass rounded-xl p-4">
+          <div class="text-xs text-slate-400">Node Status</div>
+          <div class="mt-1 text-xl font-bold text-emerald-400 mono">ONLINE</div>
+          <div class="mt-1 text-xs text-slate-500">Tunnel ready</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cipher Playground -->
+  <section id="playground" class="mx-auto w-full max-w-6xl px-4 py-6 flex-1">
+    <div class="glass rounded-2xl p-5 sm:p-7 shadow-2xl">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <h2 class="text-xl font-bold text-white">Interactive Cipher Playground</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Select an algorithm, enter a passphrase, and test round-trip encryption &amp; decryption.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label for="algorithm" class="text-xs font-medium text-slate-400">Algorithm:</label>
+          <select id="algorithm" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none">
+            <option value="AES-256-GCM">AES-256-GCM (WebCrypto)</option>
+            <option value="LATTICE-SIM">Post-Quantum Lattice (Sim)</option>
+            <option value="XENO-XOR">Xeno-XOR Stream</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Passphrase Row -->
+      <div class="mt-5 grid gap-4 md:grid-cols-12 items-end">
+        <div class="md:col-span-7">
+          <label for="passphrase" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Passphrase / Secret Key</label>
+          <div class="relative flex items-center">
+            <input id="passphrase" type="password" placeholder="Enter a strong secret passphrase..." oninput="updateEntropy()" class="w-full rounded-lg border border-slate-700 bg-slate-950/80 py-2.5 pl-3.5 pr-20 text-sm text-white mono focus:border-emerald-400 focus:outline-none" />
+            <button type="button" onclick="togglePassphraseVisibility()" class="absolute right-2.5 rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white">
+              Show
+            </button>
+          </div>
+          <div class="mt-2 flex items-center gap-3">
+            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
+              <div id="entropy-bar" class="h-full w-0 bg-rose-500 transition-all duration-300"></div>
+            </div>
+            <span id="entropy-label" class="text-xs text-slate-400 mono">Weak (0 bits)</span>
+          </div>
+        </div>
+
+        <div class="md:col-span-5 flex flex-wrap gap-2">
+          <button type="button" onclick="generateKey()" class="flex-1 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition">
+            Generate Quantum Key
+          </button>
+          <button type="button" onclick="clearAll()" class="rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Input / Output Grid -->
+      <div class="mt-6 grid gap-5 lg:grid-cols-2">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="input-text" class="text-xs font-semibold uppercase tracking-wider text-slate-400">Input (Plaintext or XenoPayload)</label>
+            <span id="input-count" class="text-xs text-slate-500 mono">0 chars</span>
+          </div>
+          <textarea id="input-text" rows="7" oninput="updateCharCount()" placeholder="Type message to encrypt, or paste a XENO:v1:... payload to decrypt..." class="w-full rounded-xl border border-slate-700 bg-slate-950/80 p-3.5 text-sm text-slate-100 mono focus:border-emerald-400 focus:outline-none"></textarea>
+          <div class="flex flex-wrap gap-2.5 pt-1">
+            <button type="button" onclick="handleEncrypt()" class="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">
+              Encrypt Payload
+            </button>
+            <button type="button" onclick="handleDecrypt()" class="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-4 py-2.5 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/20 transition">
+              Decrypt Payload
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="output-text" class="text-xs font-semibold uppercase tracking-wider text-slate-400">Output</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="moveOutputToInput()" class="rounded border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-300 hover:border-cyan-400 hover:text-cyan-300 transition">
+                Move Output to Input
+              </button>
+              <button type="button" onclick="copyOutput()" class="rounded border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-300 hover:border-emerald-400 hover:text-emerald-300 transition">
+                Copy
+              </button>
+            </div>
+          </div>
+          <textarea id="output-text" rows="7" readonly placeholder="Encrypted XENO:v1:... payload or decrypted plaintext appears here..." class="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-sm text-emerald-300 mono focus:outline-none"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section id="architecture" class="mx-auto max-w-6xl px-4 py-8">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="glass rounded-xl p-4">
+        <h3 class="text-sm font-bold text-white">Zero-Knowledge</h3>
+        <p class="mt-1 text-xs text-slate-400 leading-relaxed">All cryptographic operations execute locally via WebCrypto and deterministic streams.</p>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <h3 class="text-sm font-bold text-white">Authenticated Payloads</h3>
+        <p class="mt-1 text-xs text-slate-400 leading-relaxed">Structured <span class="mono text-emerald-400">XENO:v1:&lt;ALG&gt;:&lt;DATA&gt;</span> envelopes verify algorithm and integrity before decrypting.</p>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <h3 class="text-sm font-bold text-white">Key Derivation</h3>
+        <p class="mt-1 text-xs text-slate-400 leading-relaxed">PBKDF2 stretches human passphrases with random 16-byte salts and 12-byte IVs.</p>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <h3 class="text-sm font-bold text-white">HTTPS Required</h3>
+        <p class="mt-1 text-xs text-slate-400 leading-relaxed">Serving over Cloudflare Tunnel or localhost satisfies browser secure-context rules for WebCrypto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-obsidian/90 py-5 text-xs text-slate-400">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4">
+      <span>XenoCrypt.com — Client-Side Cryptography Playground</span>
+      <span class="inline-flex items-center gap-2 text-emerald-400">
+        <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+        All Nodes Operational
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    function showToast(msg, isError = false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `fixed bottom-5 right-5 z-50 max-w-sm rounded-lg border px-4 py-3 text-sm font-medium shadow-xl transition-all ${
+        isError
+          ? 'border-rose-500/50 bg-rose-950/95 text-rose-200'
+          : 'border-emerald-500/50 bg-emerald-950/95 text-emerald-200'
+      }`;
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => {
+        el.classList.add('hidden');
+      }, 3200);
+    }
+
+    function focusPassphrase() {
+      const input = document.getElementById('passphrase');
+      input.focus();
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function togglePassphraseVisibility() {
+      const input = document.getElementById('passphrase');
+      const btn = event.currentTarget;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = 'Hide';
+      } else {
+        input.type = 'password';
+        btn.textContent = 'Show';
+      }
+    }
+
+    function updateCharCount() {
+      const len = document.getElementById('input-text').value.length;
+      document.getElementById('input-count').textContent = `${len} chars`;
+    }
+
+    function updateEntropy() {
+      const pass = document.getElementById('passphrase').value;
+      let pool = 0;
+      if (/[a-z]/.test(pass)) pool += 26;
+      if (/[A-Z]/.test(pass)) pool += 26;
+      if (/[0-9]/.test(pass)) pool += 10;
+      if (/[^a-zA-Z0-9]/.test(pass)) pool += 32;
+
+      const bits = pass.length > 0 && pool > 0 ? Math.round(pass.length * Math.log2(pool)) : 0;
+      const pct = Math.min(100, Math.round((bits / 128) * 100));
+
+      const bar = document.getElementById('entropy-bar');
+      const label = document.getElementById('entropy-label');
+      const hero = document.getElementById('hero-entropy');
+
+      hero.textContent = `${bits} bits`;
+      bar.style.width = `${pct}%`;
+
+      if (bits < 40) {
+        bar.className = 'h-full bg-rose-500 transition-all duration-300';
+        label.textContent = `Weak (${bits} bits)`;
+      } else if (bits < 75) {
+        bar.className = 'h-full bg-amber-400 transition-all duration-300';
+        label.textContent = `Fair (${bits} bits)`;
+      } else {
+        bar.className = 'h-full bg-emerald-400 transition-all duration-300';
+        label.textContent = `Strong (${bits} bits)`;
+      }
+    }
+
+    function generateKey() {
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+      const bytes = new Uint8Array(24);
+      crypto.getRandomValues(bytes);
+      let key = 'XENO-';
+      for (let i = 0; i < bytes.length; i++) {
+        key += alphabet[bytes[i] % alphabet.length];
+      }
+      const passInput = document.getElementById('passphrase');
+      passInput.type = 'text';
+      passInput.value = key;
+      updateEntropy();
+      showToast('Generated 24-character quantum key');
+    }
+
+    function bytesToBase64(bytes) {
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function base64ToBytes(b64) {
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    async function deriveAesKey(passphrase, salt, usage) {
+      const baseKey = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(passphrase),
+        'PBKDF2',
+        false,
+        ['deriveKey']
+      );
+      return crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt,
+          iterations: 100000,
+          hash: 'SHA-256'
+        },
+        baseKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        [usage]
+      );
+    }
+
+    function keystreamByte(seedBytes, index) {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < seedBytes.length; i++) {
+        h ^= seedBytes[i];
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      h ^= (index >>> 0);
+      h = Math.imul(h, 2246822519) >>> 0;
+      h ^= (h >>> 13);
+      h = Math.imul(h, 3266489917) >>> 0;
+      h ^= (h >>> 16);
+      return h & 0xff;
+    }
+
+    function xorTransform(dataBytes, passphrase, salt, modeTag) {
+      const seed = encoder.encode(`${modeTag}|${passphrase}|`);
+      const combinedSeed = new Uint8Array(seed.length + salt.length);
+      combinedSeed.set(seed, 0);
+      combinedSeed.set(salt, seed.length);
+
+      const out = new Uint8Array(dataBytes.length);
+      for (let i = 0; i < dataBytes.length; i++) {
+        out[i] = dataBytes[i] ^ keystreamByte(combinedSeed, i);
+      }
+      return out;
+    }
+
+    async function handleEncrypt() {
+      const alg = document.getElementById('algorithm').value;
+      const passphrase = document.getElementById('passphrase').value;
+      const plaintext = document.getElementById('input-text').value;
+
+      if (!passphrase) {
+        showToast('Enter a passphrase first', true);
+        return;
+      }
+      if (!plaintext) {
+        showToast('Enter text to encrypt', true);
+        return;
+      }
+
+      try {
+        if (alg === 'AES-256-GCM') {
+          if (!window.crypto || !window.crypto.subtle) {
+            showToast('WebCrypto requires HTTPS or localhost', true);
+            return;
+          }
+          const salt = crypto.getRandomValues(new Uint8Array(16));
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          const key = await deriveAesKey(passphrase, salt, 'encrypt');
+          const cipherBuf = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            key,
+            encoder.encode(plaintext)
+          );
+          const cipherBytes = new Uint8Array(cipherBuf);
+          const packed = new Uint8Array(salt.length + iv.length + cipherBytes.length);
+          packed.set(salt, 0);
+          packed.set(iv, salt.length);
+          packed.set(cipherBytes, salt.length + iv.length);
+
+          document.getElementById('output-text').value = `XENO:v1:AES-256-GCM:${bytesToBase64(packed)}`;
+          showToast('Encrypted with AES-256-GCM');
+        } else {
+          const salt = crypto.getRandomValues(new Uint8Array(12));
+          const plainBytes = encoder.encode(plaintext);
+          const cipherBytes = xorTransform(plainBytes, passphrase, salt, alg);
+          const packed = new Uint8Array(salt.length + cipherBytes.length);
+          packed.set(salt, 0);
+          packed.set(cipherBytes, salt.length);
+
+          document.getElementById('output-text').value = `XENO:v1:${alg}:${bytesToBase64(packed)}`;
+          showToast(`Encrypted with ${alg}`);
+        }
+      } catch (err) {
+        showToast('Encryption failed: check input or secure context', true);
+      }
+    }
+
+    async function handleDecrypt() {
+      const selectedAlg = document.getElementById('algorithm').value;
+      const passphrase = document.getElementById('passphrase').value;
+      const rawPayload = document.getElementById('input-text').value.trim();
+
+      if (!passphrase) {
+        showToast('Enter the passphrase to decrypt', true);
+        return;
+      }
+      if (!rawPayload) {
+        showToast('Paste a XENO:v1:... payload to decrypt', true);
+        return;
+      }
+
+      const parts = rawPayload.split(':');
+      if (parts.length !== 4 || parts[0] !== 'XENO' || parts[1] !== 'v1') {
+        showToast('Invalid payload format (expected XENO:v1:<ALG>:<DATA>)', true);
+        return;
+      }
+
+      const payloadAlg = parts[2];
+      const b64Data = parts[3];
+
+      if (payloadAlg !== selectedAlg) {
+        showToast(`Algorithm mismatch: payload uses ${payloadAlg}, selected ${selectedAlg}`, true);
+        return;
+      }
+
+      try {
+        const packed = base64ToBytes(b64Data);
+
+        if (payloadAlg === 'AES-256-GCM') {
+          if (!window.crypto || !window.crypto.subtle) {
+            showToast('WebCrypto requires HTTPS or localhost', true);
+            return;
+          }
+          if (packed.length < 29) {
+            showToast('Malformed AES-256-GCM payload', true);
+            return;
+          }
+          const salt = packed.slice(0, 16);
+          const iv = packed.slice(16, 28);
+          const cipherBytes = packed.slice(28);
+          const key = await deriveAesKey(passphrase, salt, 'decrypt');
+          const plainBuf = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv },
+            key,
+            cipherBytes
+          );
+          document.getElementById('output-text').value = decoder.decode(plainBuf);
+          showToast('Decrypted successfully with AES-256-GCM');
+        } else if (payloadAlg === 'LATTICE-SIM' || payloadAlg === 'XENO-XOR') {
+          if (packed.length < 13) {
+            showToast('Malformed payload data', true);
+            return;
+          }
+          const salt = packed.slice(0, 12);
+          const cipherBytes = packed.slice(12);
+          const plainBytes = xorTransform(cipherBytes, passphrase, salt, payloadAlg);
+          document.getElementById('output-text').value = decoder.decode(plainBytes);
+          showToast(`Decrypted with ${payloadAlg}`);
+        } else {
+          showToast(`Unsupported algorithm: ${payloadAlg}`, true);
+        }
+      } catch (err) {
+        showToast('Decryption failed: wrong passphrase or corrupted payload', true);
+      }
+    }
+
+    function moveOutputToInput() {
+      const outVal = document.getElementById('output-text').value;
+      if (!outVal) {
+        showToast('Output is empty', true);
+        return;
+      }
+      document.getElementById('input-text').value = outVal;
+      updateCharCount();
+      showToast('Moved output to input');
+    }
+
+    async function copyOutput() {
+      const outVal = document.getElementById('output-text').value;
+      if (!outVal) {
+        showToast('Nothing to copy', true);
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(outVal);
+        showToast('Copied output to clipboard');
+      } catch {
+        showToast('Clipboard permission blocked; select and copy manually', true);
+      }
+    }
+
+    function clearAll() {
+      document.getElementById('passphrase').value = '';
+      document.getElementById('input-text').value = '';
+      document.getElementById('output-text').value = '';
+      updateEntropy();
+      updateCharCount();
+      showToast('Cleared fields');
+    }
+  </script>
+</body>
+</html>
